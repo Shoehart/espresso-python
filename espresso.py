@@ -9,50 +9,52 @@ Espresso is freely available under the terms of the GNU Public License, version 
 import os
 import sys
 from threading import Timer
-try:
-	from PySide import QtCore, QtGui, QtSvg
-except ImportError:
-	from PyQt4 import QtCore, QtGui, QtSvg
+from PyQt5 import QtWidgets, QtCore, QtGui, QtSvg
 
 
-class TrayIcon(QtGui.QSystemTrayIcon):
+class TrayIcon(QtWidgets.QSystemTrayIcon):
 	def __init__(self, inhibitor, parent):
 		super().__init__(parent)
 		
-		self.ICON_EMPTY_CUP     = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "Empty_Cup.svg"))
-		self.ICON_FULL_CUP      = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "Full_Cup.svg"))
-		self.ICON_CRYSTAL_CLOCK = QtGui.QIcon(os.path.join(os.path.dirname(__file__), "Crystal_Clock.svg"))
-		self.ICON_CLOSE         = self.parent().style().standardIcon(QtGui.QStyle.SP_DialogCloseButton)
+		self.ICON_EMPTY_CUP     = QtGui.QIcon(os.path.join(os.path.dirname(__file__), 'Empty_Cup.svg'))
+		self.ICON_FULL_CUP      = QtGui.QIcon(os.path.join(os.path.dirname(__file__), 'Full_Cup.svg'))
+		self.ICON_CRYSTAL_CLOCK = QtGui.QIcon(os.path.join(os.path.dirname(__file__), 'Crystal_Clock.svg'))
+		self.ICON_ALERTS 		= QtGui.QIcon(os.path.join(os.path.dirname(__file__), 'Alert.svg'))
+		self.ICON_CLOSE         = self.parent().style().standardIcon(QtWidgets.QStyle.SP_DialogCloseButton)
 		
 		self.inhibitor = inhibitor
 		self.timer = Timer(0, self.Event) # default timer never runs
 		self.UnInhibit()
-		self.setToolTip("Espresso - click to toggle, middle-click to quit")
+		self.setToolTip('Espresso - click to toggle, middle-click to quit')
 		self.setContextMenu(self.BuildMenu())
 		self.activated.connect(self.Event)
 
 	def BuildMenu(self):
-		menu = QtGui.QMenu()
+		menu = QtWidgets.QMenu()
 		
-		inhibit_menu = menu.addMenu(self.ICON_CRYSTAL_CLOCK, "Inhibit for")
+		inhibit_menu = menu.addMenu(self.ICON_CRYSTAL_CLOCK, 'Inhibit for')
 		for minutes in [1, 5, 10, 15, 30]:
-			suffix = "s" if minutes > 1 else ""
-			inhibit_menu.addAction(str(minutes)+" minute"+suffix).triggered.connect(lambda m = minutes : self.Inhibit(m))
+			suffix = 's' if minutes > 1 else ''
+			inhibit_menu.addAction(str(minutes) + ' minute' + suffix).triggered.connect(lambda m = minutes : self.Inhibit(m))
 		for hours in [1, 2, 5]:
-			suffix = "s" if hours > 1 else ""
-			inhibit_menu.addAction(str(hours)+" hour"+suffix).triggered.connect(lambda m = hours*60 : self.Inhibit(m))
-		inhibit_menu.addAction("Indefinitely").triggered.connect(self.Inhibit)
+			suffix = 's' if hours > 1 else ''
+			inhibit_menu.addAction(str(hours) + ' hour' + suffix).triggered.connect(lambda m = hours*60 : self.Inhibit(m))
+		inhibit_menu.addAction('Indefinitely').triggered.connect(self.Inhibit)
+
+		inhibit_menu = menu.addMenu(self.ICON_ALERTS, 'Monitoring 2.0')
+		inhibit_menu.addAction('ON').triggered.connect(lambda m = minutes : self.Inhibit(m))
+		inhibit_menu.addAction('OFF').triggered.connect(lambda m = hours*60 : self.Inhibit(m))
 		
-		menu.addAction(self.ICON_CLOSE, "Quit").triggered.connect(self.Quit)
+		menu.addAction(self.ICON_CLOSE, 'Quit').triggered.connect(self.Quit)
 		return menu
 
 	def Event(self, reason):
-		if reason == QtGui.QSystemTrayIcon.Trigger:
+		if reason == QtWidgets.QSystemTrayIcon.Trigger:
 			if not self.inhibitor.Inhibited:
 				self.Inhibit()
 			else:
 				self.UnInhibit()
-		elif reason == QtGui.QSystemTrayIcon.MiddleClick:
+		elif reason == QtWidgets.QSystemTrayIcon.MiddleClick:
 			self.Quit()
 
 	def Inhibit(self, timeout_minutes = None):
@@ -76,10 +78,11 @@ class TrayIcon(QtGui.QSystemTrayIcon):
 
 if __name__ == "__main__":
 	import inhibitors
+	#import alerts
 	
-	app = QtGui.QApplication(sys.argv)
-	if not QtGui.QSystemTrayIcon.isSystemTrayAvailable():
-		QtGui.QMessageBox.critical(None, QtCore.QObject.tr(app, "Espresso"), QtCore.QObject.tr(app, "No system tray available"))
+	app = QtWidgets.QApplication(sys.argv)
+	if not QtWidgets.QSystemTrayIcon.isSystemTrayAvailable():
+		QtWidgets.QMessageBox.critical(None, QtCore.QObject.tr(app, 'Espresso'), QtCore.QObject.tr(app, 'No system tray available'))
 		sys.exit(1)
 	icon = TrayIcon(inhibitors.AutoSelect(), app);
 	icon.show()
